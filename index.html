@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050608">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Operativo">
+<title>Operativo diario</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<style>
+:root{--bg:#050608;--c:#0f1520;--c2:#0a1119;--b:#ffffff14;--a:#2f6df6;--t:#f7f8fa;--s:#9ba8b8;--w:#f5a524;--ok:#16a34a;--bad:#dc2626}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--t);font:16px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+main{max-width:920px;margin:0 auto;padding:16px 16px 60px}
+nav{display:flex;gap:4px;overflow-x:auto;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--bg);z-index:20;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav a{color:var(--s);text-decoration:none;padding:8px 12px;border-radius:8px;white-space:nowrap;font-size:14px;flex:none}
+nav a[aria-current]{color:var(--t);background:var(--c);box-shadow:inset 0 0 0 1px var(--b)}
+:focus-visible{outline:2px solid #8fb0ff;outline-offset:2px}
+.card{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:20px;margin:0 0 16px}
+h1{font-size:clamp(22px,4vw,30px);line-height:1.25;margin:8px 0 16px;letter-spacing:-.02em}
+h2{font-size:17px;margin:26px 0 10px;letter-spacing:-.01em}
+small,.s{color:var(--s);font-size:13px}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.n{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:13px;color:var(--s);font-size:12.5px}
+.n b{display:block;color:var(--t);font-size:clamp(19px,4.2vw,30px);line-height:1.15;letter-spacing:-.03em}
+.n input{width:100%;margin-top:6px}
+.bar{height:10px;background:var(--c);border:1px solid var(--b);border-radius:9px;overflow:hidden;margin-bottom:6px}
+.bar i{display:block;height:100%;background:var(--a);transition:width .3s}
+button,input,select,textarea{font:inherit;color:var(--t);background:var(--bg);border:1px solid var(--b);border-radius:8px;padding:10px 12px;max-width:100%}
+button{cursor:pointer;background:var(--c)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.pri{background:var(--a);border-color:var(--a);color:#fff;font-weight:600;padding:12px 22px}
+button.ghost{background:transparent}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row>*{flex:1 1 140px}
+.it{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.warn{border-left:3px solid var(--w);padding:10px 12px;color:#f3c67a;margin:12px 0;background:#f5a5240d;border-radius:0 8px 8px 0;font-size:14px}
+.ok{border-left:3px solid var(--ok);padding:10px 12px;color:#a7e0b8;margin:12px 0;background:#16a34a0d;border-radius:0 8px 8px 0;font-size:14px}
+.bad{border-left:3px solid var(--bad);padding:10px 12px;color:#f3a3a3;margin:12px 0;background:#dc26260d;border-radius:0 8px 8px 0;font-size:14px}
+.big{font-size:clamp(26px,6vw,40px);font-weight:700;line-height:1.2;letter-spacing:-.03em}
+a.btn{display:inline-block;color:var(--t);text-decoration:none;border:1px solid var(--b);border-radius:8px;padding:12px 22px;background:var(--bg)}
+a.lk{color:#8fb0ff}
+.ck{display:flex;gap:10px;align-items:center;padding:7px 0;font-size:14.5px}
+.ck input{flex:0 0 auto;width:19px;height:19px;accent-color:var(--a)}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid var(--b);color:var(--s)}
+.tag.venc{color:#f3c67a;border-color:#f5a52455;background:#f5a5240d}
+pre{background:var(--c2);border:1px solid var(--b);border-radius:10px;padding:14px;overflow:auto;font:12px/1.6 ui-monospace,Menlo,monospace;color:#c9d6e5;margin:10px 0;white-space:pre-wrap}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#1b2432;border:1px solid #ffffff22;color:#fff;padding:10px 14px;border-radius:10px;display:none;align-items:center;gap:12px;z-index:60;font-size:14px;max-width:92vw;box-shadow:0 10px 30px #0008}
+#toast.on{display:flex}
+#toast button{background:transparent;border:0;color:#8fb0ff;font-weight:700;padding:2px 4px;flex:0 0 auto}
+#modal{position:fixed;inset:0;background:#000000c9;z-index:80;display:none;padding:20px;overflow:auto}
+#modal.on{display:block}
+.mbox{max-width:620px;margin:6vh auto;background:var(--c);border:1px solid var(--b);border-radius:14px;padding:18px}
+.mbox textarea{width:100%;min-height:220px;margin:10px 0;font:13px/1.6 ui-monospace,Menlo,monospace}
+.err{max-width:620px;margin:8vh auto;padding:22px;background:var(--c);border:1px solid #dc262655;border-radius:14px}
+.err code{display:block;background:#000;padding:10px;border-radius:8px;margin:10px 0;font-size:12px;color:#f3a3a3;overflow:auto}
+@media(max-width:560px){.nums{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<nav id="nav" aria-label="Secciones"></nav>
+<main id="app"></main>
+<div id="toast" role="status" aria-live="polite"><span id="tmsg"></span><button id="tact" hidden>Deshacer</button></div>
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mtit"><div class="mbox"><b id="mtit">Copiá manualmente</b><textarea id="mtext" readonly aria-label="Texto para copiar"></textarea><p class="s">Ya está seleccionado. Copiá con Ctrl+C, Cmd+C o manteniendo presionado.</p><button class="pri" data-a="cerrarModal">Cerrar</button></div></div>
+<script>
+"use strict";
+/* =========================================================================
+   OPERATIVO DIARIO · v2
+   Secciones: 1 constantes · 2 utilidades · 3 estado · 4 persistencia
+              5 sincronización · 6 lógica · 7 vistas · 8 acciones · 9 arranque
+   ========================================================================= */
+
+/* ---------- 1. CONSTANTES ---------- */
+const CLAVE = "operativo";
+const VERSION = 2;
+
+const SERVICIOS = [
+  ["Diagnóstico web express", 180, "48 h", "Revisión de velocidad, SEO, seguridad y conversión, con informe priorizado"],
+  ["Landing que vende", 480, "5 días", "Una página de venta con textos, diseño y medición"],
+  ["Blindaje básico para PyME", 550, "1 semana", "Revisión de accesos, copias, correo y contraseñas, con plan de corrección"],
+  ["Pack de contenido mensual", 320, "Mensual", "Calendario y piezas del mes para redes"],
+  ["Automatización con IA", 750, "10 días", "Un proceso repetitivo automatizado y documentado"]
+];
+
+const ESTADOS = ["sin contactar", "contactado", "interesado", "propuesta", "cerrado", "perdido"];
+const PROB = [.05, .10, .25, .50, 1, 0];
+const PAGOS = ["Pendiente de adelanto", "Adelanto cobrado", "Saldo pendiente", "Cobrado"];
+
+const PRODUCTOS_CAMPO = [
+  ["Relevamiento interno", "USD 1.800"],
+  ["Estudio a medida", "USD 2.800"],
+  ["Línea de base", "USD 4.500"],
+  ["Observatorio mensual", "USD 1.200 por mes"],
+  ["Clasificación por registro", "USD 0,04 por registro"]
+];
+
+const CHECKLIST = [
+  "Consentimiento registrado",
+  "Cuotas definidas",
+  "Verificación telefónica del 10 %",
+  "Informe metodológico",
+  "Copia de seguridad de la base"
+];
+
+const PESTANAS = [
+  ["hoy", "Hoy"], ["pipeline", "Pipeline"], ["vender", "Vender"], ["cobrar", "Cobrar"],
+  ["semana", "Semana"], ["campo", "Motor de campo"], ["formacion", "Formación"],
+  ["parqueadero", "Parqueadero"], ["ajustes", "Ajustes"]
+];
+
+const SQL = "create table if not exists estado_app (\n  user_id text primary key,\n  json jsonb not null,\n  actualizado_en timestamptz not null default now()\n);\n\nalter table estado_app enable row level security;\n\ncreate policy \"acceso por identificador\"\n  on estado_app for all\n  using (true) with check (true);";
+
+/* ---------- 2. UTILIDADES PURAS ---------- */
+const $ = s => document.querySelector(s);
+const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const map = (arr, fn) => arr.map(fn).join("");
+const usd = n => "USD " + Math.round(Number.isFinite(+n) ? +n : 0).toLocaleString("es-AR");
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+
+/* fechas locales, sin toISOString() */
+function hoyISO() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function isoA(fecha) {
+  const [y, m, d] = String(fecha).split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0);
+}
+function sumaDias(n, base) {
+  const d = isoA(base || hoyISO());
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function bonita(fecha) {
+  if (!fecha) return "—";
+  const p = String(fecha).slice(0, 10).split("-");
+  return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : "—";
+}
+function diasDesde(fecha) {
+  if (!fecha) return 0;
+  const a = isoA(String(fecha).slice(0, 10)).getTime();
+  return Math.floor((isoA(hoyISO()).getTime() - a) / 864e5);
+}
+function inicioSemana() {
+  const d = isoA(hoyISO());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function ahoraISO() { return new Date().toISOString(); }
+
+/* conversores defensivos */
+function enteroSeguro(v, min, max, def) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
+}
+function numeroSeguro(v, def) {
+  const n = parseFloat(v);
+  return Number.isFinite(n) && n >= 0 ? n : def;
+}
+function fechaSegura(v, def) {
+  const s = String(v || "").slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const d = isoA(s);
+    if (!isNaN(d.getTime())) return s;
+  }
+  return def || hoyISO();
+}
+
+/* copiar con tres niveles: nunca deja el flujo muerto */
+async function copiar(texto, aviso) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(texto);
+      return toast(aviso || "Copiado");
+    }
+  } catch (_) { /* sigue al plan B */ }
+
+  const ta = document.createElement("textarea");
+  ta.value = texto;
+  ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
+  ta.remove();
+  if (ok) return toast(aviso || "Copiado");
+
+  const m = $("#mtext");
+  m.value = texto;
+  $("#modal").classList.add("on");
+  m.focus();
+  m.select();
+}
+
+/* toast con acción opcional */
+let toastTimer = null;
+function toast(msg, accion) {
+  const t = $("#toast"), b = $("#tact"), m = $("#tmsg");
+  m.textContent = msg;
+  clearTimeout(toastTimer);
+  if (accion) {
+    b.hidden = false;
+    b.textContent = accion.etiqueta || "Deshacer";
+    b.onclick = () => { t.classList.remove("on"); accion.fn(); };
+  } else {
+    b.hidden = true;
+    b.onclick = null;
+  }
+  t.classList.add("on");
+  toastTimer = setTimeout(() => t.classList.remove("on"), accion ? 6000 : 2400);
+}
+
+/* ---------- 3. ESTADO ---------- */
+function estadoVacio() {
+  return {
+    v: VERSION,
+    meta: 3000,
+    limite: sumaDias(15),
+    pipeline: [],
+    contactos: [],
+    pagos: [],
+    accion: { fecha: "", tipo: "", ref: "", hecha: false },
+    campo: { chk: [0, 0, 0, 0, 0], est: 0, per: 0 },
+    horas: [],
+    objetivoHoras: 10,
+    fases: [["Fase 1 · Base sólida", ""], ["Fase 2 · Operador confiable", ""], ["Fase 3 · Analista", ""], ["Fase 4 · Asesor", ""]],
+    practicas: [],
+    parqueadero: [],
+    sync: { url: "", key: "", uid: "", ultima: 0 },
+    upd: ""
+  };
+}
+
+/* migra desde el esquema v1 sin perder datos */
+function migrar(bruto) {
+  const o = bruto && typeof bruto === "object" ? bruto : {};
+  const base = estadoVacio();
+  if (o.v === VERSION) return Object.assign(base, o);
+
+  if (o.v === 1 || o.pipe || o.goal || o.end) {
+    return {
+      v: VERSION,
+      meta: numeroSeguro(o.goal, 3000) || 3000,
+      limite: fechaSegura(o.end, sumaDias(15)),
+      pipeline: Array.isArray(o.pipe) ? o.pipe : [],
+      contactos: Array.isArray(o.cont) ? o.cont : [],
+      pagos: Array.isArray(o.pay) ? o.pay : [],
+      accion: { fecha: "", tipo: "", ref: "", hecha: false },
+      campo: {
+        chk: (o.camp && Array.isArray(o.camp.chk)) ? o.camp.chk : [0, 0, 0, 0, 0],
+        est: numeroSeguro(o.camp && o.camp.est, 0),
+        per: numeroSeguro(o.camp && o.camp.per, 0)
+      },
+      horas: Array.isArray(o.hrs) ? o.hrs : [],
+      objetivoHoras: numeroSeguro(o.hg, 10) || 10,
+      fases: Array.isArray(o.fases) && o.fases.length === 4 ? o.fases : base.fases,
+      practicas: Array.isArray(o.pr) ? o.pr : [],
+      parqueadero: Array.isArray(o.pk) ? o.pk : [],
+      sync: { url: (o.sy && o.sy.url) || "", key: (o.sy && o.sy.key) || "", uid: (o.sy && o.sy.uid) || "", ultima: 0 },
+      upd: o.upd || ""
+    };
+  }
+  return base;
+}
+
+/* normaliza TODO: nunca deja un dato que rompa una vista */
+function sanear(bruto) {
+  const o = migrar(bruto);
+  const vacio = estadoVacio();
+
+  o.meta = numeroSeguro(o.meta, 3000) || 3000;
+  o.limite = fechaSegura(o.limite, sumaDias(15));
+  o.objetivoHoras = numeroSeguro(o.objetivoHoras, 10) || 10;
+
+  o.pipeline = (Array.isArray(o.pipeline) ? o.pipeline : [])
+    .filter(x => x && typeof x === "object")
+    .map(x => {
+      const sv = enteroSeguro(x.sv, 0, SERVICIOS.length - 1, 0);
+      return {
+        id: String(x.id || uid()),
+        n: String(x.n || "Sin nombre").trim().slice(0, 80) || "Sin nombre",
+        sv,
+        m: numeroSeguro(x.m, SERVICIOS[sv][1]),
+        st: ESTADOS.includes(x.st) ? x.st : "sin contactar",
+        lc: fechaSegura(x.lc, hoyISO()),
+        cd: x.cd ? fechaSegura(x.cd, hoyISO()) : "",
+        p: enteroSeguro(x.p, 0, 3, 0),
+        ent: x.ent ? 1 : 0
+      };
+    });
+
+  o.contactos = (Array.isArray(o.contactos) ? o.contactos : [])
+    .filter(x => typeof x === "string" && x.length >= 10)
+    .map(x => x.slice(0, 19));
+
+  o.pagos = (Array.isArray(o.pagos) ? o.pagos : [])
+    .filter(x => x && typeof x === "object")
+    .map(x => ({ d: fechaSegura(x.d, hoyISO()), m: numeroSeguro(x.m, 0) }));
+
+  o.horas = (Array.isArray(o.horas) ? o.horas : [])
+    .filter(x => x && typeof x === "object")
+    .map(x => ({ d: fechaSegura(x.d, hoyISO()), h: numeroSeguro(x.h, 0) }));
+
+  o.practicas = (Array.isArray(o.practicas) ? o.practicas : [])
+    .filter(x => x && typeof x === "object")
+    .map(x => ({
+      d: fechaSegura(x.d, hoyISO()),
+      a: String(x.a || "").slice(0, 300),
+      b: String(x.b || "").slice(0, 300),
+      l: String(x.l || "").slice(0, 300)
+    }));
+
+  o.parqueadero = (Array.isArray(o.parqueadero) ? o.parqueadero : [])
+    .filter(x => x && typeof x === "object")
+    .map(x => ({ id: String(x.id || uid()), t: String(x.t || "").slice(0, 240), d: fechaSegura(x.d, hoyISO()), a: x.a ? 1 : 0 }));
+
+  o.fases = (Array.isArray(o.fases) && o.fases.length === 4 ? o.fases : vacio.fases)
+    .map((f, i) => [String((f && f[0]) || vacio.fases[i][0]).slice(0, 80), String((f && f[1]) || "").slice(0, 200)]);
+
+  o.campo = {
+    chk: (o.campo && Array.isArray(o.campo.chk) ? o.campo.chk : [0, 0, 0, 0, 0]).map(v => (v ? 1 : 0)).slice(0, 5),
+    est: numeroSeguro(o.campo && o.campo.est, 0),
+    per: numeroSeguro(o.campo && o.campo.per, 0)
+  };
+  while (o.campo.chk.length < 5) o.campo.chk.push(0);
+
+  const ac = o.accion && typeof o.accion === "object" ? o.accion : {};
+  o.accion = {
+    fecha: String(ac.fecha || ""),
+    tipo: String(ac.tipo || ""),
+    ref: String(ac.ref || ""),
+    hecha: !!ac.hecha
+  };
+
+  const sy = o.sync && typeof o.sync === "object" ? o.sync : {};
+  o.sync = {
+    url: String(sy.url || "").trim(),
+    key: String(sy.key || "").trim(),
+    uid: String(sy.uid || "").trim(),
+    ultima: numeroSeguro(sy.ultima, 0)
+  };
+
+  o.upd = String(o.upd || "");
+  o.v = VERSION;
+  return o;
+}
+
+let S = estadoVacio();
+
+/* ---------- 4. PERSISTENCIA ---------- */
+let guardadoFallido = false;
+
+function cargar() {
+  try {
+    const crudo = localStorage.getItem(CLAVE);
+    S = crudo ? sanear(JSON.parse(crudo)) : estadoVacio();
+  } catch (_) {
+    S = estadoVacio();
+  }
+}
+
+function guardar(mar = true) {
+  if (mar) S.upd = ahoraISO();
+  try {
+    localStorage.setItem(CLAVE, JSON.stringify(S));
+    guardadoFallido = false;
+  } catch (e) {
+    guardadoFallido = true;
+  }
+}
+
+function exportar() {
+  const copia = JSON.parse(JSON.stringify(S));
+  delete copia.sync;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(copia, null, 1)], { type: "application/json" }));
+  a.download = "operativo-" + hoyISO() + ".json";
+  a.click();
+}
+
+function importar(texto) {
+  let bruto;
+  try { bruto = JSON.parse(texto); } catch (_) { return toast("Archivo inválido"); }
+  const sync = S.sync;
+  S = sanear(bruto);
+  S.sync = sync;
+  guardar();
+  render();
+  toast("Importado");
+}
+
+/* ---------- 5. SINCRONIZACIÓN ---------- */
+let sincronizando = false;
+let pendienteSync = false;
+let conflicto = null;
+let estadoSync = "Sin sincronizar: todo queda en este dispositivo.";
+
+const syncListo = () => !!(S.sync.url && S.sync.key && S.sync.uid);
+const cabeceras = () => ({ apikey: S.sync.key, Authorization: "Bearer " + S.sync.key, "Content-Type": "application/json" });
+
+async function sincronizar(forzar) {
+  if (!syncListo() || sincronizando) { if (sincronizando) pendienteSync = true; return; }
+  sincronizando = true;
+  pendienteSync = false;
+  const base = S.sync.url.replace(/\/+$/, "") + "/rest/v1/estado_app";
+
+  try {
+    const q = base + "?user_id=eq." + encodeURIComponent(S.sync.uid) + "&select=json,actualizado_en";
+    const r = await fetch(q, { headers: cabeceras() });
+    if (!r.ok) throw new Error("GET " + r.status);
+    const fila = (await r.json())[0];
+
+    if (fila) {
+      const remotoTs = Date.parse(fila.actualizado_en) || 0;
+      const localTs = Date.parse(S.upd) || 0;
+      const ultima = S.sync.ultima || 0;
+
+      // Remoto más nuevo y no hubo cambios locales desde la última sync: adoptar sin preguntar.
+      if (remotoTs > localTs && localTs <= ultima) {
+        adoptar(fila);
+        return;
+      }
+      // Cambios en ambos lados: conflicto real.
+      if (remotoTs > localTs + 1000 && localTs > ultima) {
+        conflicto = fila;
+        estadoSync = "Conflicto sin resolver: hay cambios en los dos dispositivos.";
+        return render();
+      }
+    }
+
+    const cuerpo = { user_id: S.sync.uid, json: (() => { const c = JSON.parse(JSON.stringify(S)); delete c.sync; return c; })(), actualizado_en: S.upd || ahoraISO() };
+    const r2 = await fetch(base + "?on_conflict=user_id", {
+      method: "POST",
+      headers: Object.assign(cabeceras(), { Prefer: "resolution=merge-duplicates" }),
+      body: JSON.stringify(cuerpo)
+    });
+    if (!r2.ok) throw new Error("POST " + r2.status);
+
+    S.sync.ultima = Date.now();
+    S.upd = cuerpo.actualizado_en;
+    guardar(false);
+    estadoSync = "Sincronizado " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    render();
+  } catch (e) {
+    estadoSync = "No se pudo sincronizar (" + (e && e.message ? e.message : e) + "). La app sigue funcionando en local.";
+    render();
+  } finally {
+    sincronizando = false;
+    if (pendienteSync) { pendienteSync = false; setTimeout(() => sincronizar(), 800); }
+  }
+}
+
+function adoptar(fila) {
+  const sync = S.sync;
+  S = sanear(fila.json);
+  S.sync = sync;
+  S.sync.ultima = Date.now();
+  S.upd = fila.actualizado_en || ahoraISO();
+  guardar(false);
+  conflicto = null;
+  estadoSync = "Sincronizado " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  render();
+}
+
+/* ---------- 6. LÓGICA DE NEGOCIO (pura) ---------- */
+const cerrados = () => S.pipeline.filter(x => x.st === "cerrado");
+
+function cobradoDe(x) {
+  if (x.p === 3) return x.m;
+  if (x.p === 1 || x.p === 2) return x.m / 2;
+  return 0;
+}
+
+const proyectado = () => S.pipeline.reduce((a, x) => {
+  const i = ESTADOS.indexOf(x.st);
+  return a + x.m * (i >= 0 ? PROB[i] : 0);
+}, 0);
+
+const cobrado = () => cerrados().reduce((a, x) => a + cobradoDe(x), 0);
+const contactosHoy = () => S.contactos.filter(c => c.slice(0, 10) === hoyISO()).length;
+
+function registrarContacto(fecha) {
+  const d = fechaSegura(fecha, hoyISO());
+  const marca = d + "T" + new Date().toTimeString().slice(0, 8);
+  const yaHay = S.contactos.some(c => c.slice(0, 10) === d && c.slice(11, 19) === marca.slice(11, 19));
+  if (yaHay) return false;
+  S.contactos.push(marca);
+  S.contactos = S.contactos.slice(-2000);
+  return true;
+}
+
+/* devuelve las prioridades en orden, la UI muestra la primera que no esté hecha */
+function prioridades() {
+  const out = [];
+
+  const propuesta = S.pipeline.find(x => x.st === "propuesta" && diasDesde(x.lc) > 2);
+  if (propuesta) out.push({
+    k: "seguir", ref: propuesta.id,
+    txt: "Seguí a " + propuesta.n + ": la propuesta de " + SERVICIOS[propuesta.sv][0] + " está sin respuesta desde el " + bonita(propuesta.lc) + ".",
+    why: "Propuesta enviada sin seguimiento hace más de 48 h."
+  });
+
+  const cobro = S.pipeline.find(x => x.st === "cerrado" && (x.p === 2 || (x.ent && x.p !== 3) || (x.p === 0 && diasDesde(x.cd) > 3)));
+  if (cobro) out.push({
+    k: "cobrar", ref: cobro.id,
+    txt: "Cobrale a " + cobro.n + " lo que falta de " + SERVICIOS[cobro.sv][0] + " (" + usd(cobro.m - cobradoDe(cobro)) + ").",
+    why: "Hay un cobro pendiente o vencido."
+  });
+
+  if (proyectado() < S.meta && contactosHoy() < 5) out.push({
+    k: "contactar",
+    txt: "Mandá " + (5 - contactosHoy()) + " mensajes de primer contacto por WhatsApp y cargalos en Pipeline.",
+    why: "El pipeline proyectado no llega a la meta y faltan contactos hoy."
+  });
+
+  const entregar = S.pipeline.find(x => x.st === "cerrado" && !x.ent);
+  if (entregar) out.push({
+    k: "entregar", ref: entregar.id,
+    txt: "Entregá " + SERVICIOS[entregar.sv][0] + " a " + entregar.n + " y pedí el saldo.",
+    why: "Hay un trabajo cerrado sin entregar."
+  });
+
+  out.push({ k: "nuevo", txt: "Cargá un contacto nuevo en Pipeline.", why: "No se cumple ninguna regla de prioridad." });
+  return out;
+}
+
+function accionDeHoy() {
+  const lista = prioridades();
+  const hecha = S.accion.fecha === hoyISO() && S.accion.hecha;
+  if (hecha) {
+    const siguiente = lista.find(p => !(p.k === S.accion.tipo && String(p.ref || "") === String(S.accion.ref || "")));
+    return { lista, hecha: true, actual: null, siguiente: siguiente || lista[0] };
+  }
+  return { lista, hecha: false, actual: lista[0], siguiente: lista[1] || null };
+}
+
+function marcarHecha(tipo, ref) {
+  S.accion = { fecha: hoyISO(), tipo, ref: ref || "", hecha: true };
+}
+
+/* ---------- 7. VISTAS ---------- */
+const num = (etiqueta, valor) => '<div class="n">' + etiqueta + '<b>' + valor + '</b></div>';
+
+function vHoy() {
+  const { hecha, actual, siguiente } = accionDeHoy();
+  const co = cobrado();
+  const ch = contactosHoy();
+  const dias = Math.max(0, Math.ceil((isoA(S.limite).getTime() - isoA(hoyISO()).getTime()) / 864e5));
+  const ultimo = S.contactos.length ? S.contactos[S.contactos.length - 1] : null;
+  const seco = !ultimo || diasDesde(ultimo.slice(0, 10)) >= 2;
+
+  let tarjeta;
+  if (hecha && actual === null) {
+    tarjeta = '<section class="card" style="border-color:#16a34a55">' +
+      '<small style="color:#86efac">Acción de hoy · completada</small>' +
+      '<h1 style="margin-bottom:10px">Listo por hoy.</h1>' +
+      '<p class="s">Si querés seguir, la próxima sugerencia es: ' + esc(siguiente ? siguiente.txt : "cargar un contacto nuevo.") + '</p>' +
+      '<p class="s">' + esc(siguiente ? siguiente.why : "") + '</p>';
+    if (siguiente && siguiente.k === "contactar") {
+      tarjeta += '<p><a class="btn" href="#vender">Ir a Vender</a></p>';
+    } else if (siguiente && siguiente.k === "cobrar") {
+      tarjeta += '<p><a class="btn" href="#cobrar">Ir a Cobrar</a></p>';
+    } else {
+      tarjeta += '<p><a class="btn" href="#pipeline">Ir a Pipeline</a></p>';
+    }
+    tarjeta += '<p><button class="ghost" data-a="reabrir">Marcar como no hecha</button></p></section>';
+  } else {
+    tarjeta = '<section class="card"><small>La acción de hoy</small><h1>' + esc(actual.txt) + '</h1>' + controlesAccion(actual) +
+      '<p class="s">' + esc(actual.why) + '</p></section>';
+  }
+
+  return tarjeta +
+    (new Date().getDay() === 0 ? '<p class="warn">Es domingo: <a class="lk" href="#semana">revisá la semana</a>.</p>' : "") +
+    (guardadoFallido ? '<p class="bad">No se pudo guardar en este dispositivo (sin espacio o modo privado). Exportá un respaldo ahora.</p>' : "") +
+    '<div class="nums">' + num("Días restantes", dias) + num("Cobrado", usd(co)) + num("Proyectado", usd(proyectado())) + num("Contactos hoy", ch) + '</div>' +
+    '<div class="bar" role="progressbar" aria-label="Progreso hacia la meta" aria-valuemin="0" aria-valuemax="' + S.meta + '" aria-valuenow="' + Math.round(co) + '"><i style="width:' + Math.min(100, (co / S.meta) * 100) + '%"></i></div><small>' + usd(co) + ' de ' + usd(S.meta) + '</small>' +
+    (seco ? '<p class="warn">' + (ultimo ? "Sin contactos desde el " + bonita(ultimo.slice(0, 10)) + ". El pipeline se seca en silencio." : "Sin contactos registrados. El pipeline se seca en silencio.") + '</p>' : "");
+}
+
+function controlesAccion(a) {
+  if (a.k === "contactar") {
+    const faltan = 5 - contactosHoy();
+    return '<p><button data-a="copiarPlantilla" data-o="0" data-k="0">Copiar mensaje: ' + esc(SERVICIOS[0][0]) + '</button></p>' +
+      '<form data-f="contacto" class="row"><input name="n" placeholder="A quién le escribiste" aria-label="Nombre del contacto" required maxlength="80"><button class="pri">Registrar contacto</button></form>' +
+      '<p class="s">' + contactosHoy() + ' de 5 hoy · faltan ' + faltan + '</p>';
+  }
+  if (a.k === "cobrar") return '<p><a class="btn" href="#cobrar">Ir a Cobrar</a></p>';
+  if (a.k === "seguir") return '<p><button data-a="copiarSeguimiento" data-i="' + a.ref + '">Copiar seguimiento</button></p><p><button class="pri" data-a="hecho" data-k="seguir" data-i="' + a.ref + '">Hecho</button></p>';
+  if (a.k === "entregar") return '<p><button class="pri" data-a="hecho" data-k="entregar" data-i="' + a.ref + '">Marcar entregado</button></p>';
+  return '<p><a class="btn" href="#pipeline">Ir a Pipeline</a></p>';
+}
+
+function vPipeline() {
+  const filtrados = S.pipeline.filter(x => (!filtro.est || x.st === filtro.est) && (filtro.sv === "" || String(x.sv) === filtro.sv));
+  return '<h1>Pipeline</h1>' +
+    '<form class="card" data-f="alta"><div class="row">' +
+    '<input name="n" placeholder="Nombre o negocio" aria-label="Nombre" required maxlength="80">' +
+    '<select name="sv" data-c="svAlta" aria-label="Servicio">' + map(SERVICIOS, (o, i) => '<option value="' + i + '">' + esc(o[0]) + ' · USD ' + o[1] + '</option>') + '</select>' +
+    '<input name="m" type="number" min="0" step="10" value="' + SERVICIOS[0][1] + '" aria-label="Monto en USD">' +
+    '<select name="st" aria-label="Estado">' + map(ESTADOS, s => '<option' + (s === "contactado" ? " selected" : "") + '>' + s + '</option>') + '</select>' +
+    '<input name="lc" type="date" value="' + hoyISO() + '" aria-label="Fecha de último contacto">' +
+    '</div><p><button class="pri">Agregar</button></p></form>' +
+    '<div class="row"><select data-c="filtroEst" aria-label="Filtrar por estado"><option value="">Todos los estados</option>' + map(ESTADOS, s => '<option' + (filtro.est === s ? " selected" : "") + '>' + s + '</option>') + '</select>' +
+    '<select data-c="filtroSv" aria-label="Filtrar por servicio"><option value="">Todos los servicios</option>' + map(SERVICIOS, (o, i) => '<option value="' + i + '"' + (filtro.sv === String(i) ? " selected" : "") + '>' + esc(o[0]) + '</option>') + '</select></div>' +
+    '<p class="s">Proyectado: <b>' + usd(proyectado()) + '</b> · ' + filtrados.length + ' de ' + S.pipeline.length + ' contactos</p>' +
+    (filtrados.length ? map(filtrados, filaPipeline) : '<p class="s">Todavía no cargaste contactos. Cargá el primero arriba.</p>');
+}
+
+const filtro = { est: "", sv: "" };
+
+function filaPipeline(x) {
+  const vencido = x.st !== "cerrado" && x.st !== "perdido" && diasDesde(x.lc) > 2;
+  return '<div class="it"><div class="row"><b>' + esc(x.n) + '</b><span class="s">' + esc(SERVICIOS[x.sv][0]) + ' · ' + usd(x.m) + ' · ' + Math.round(PROB[ESTADOS.indexOf(x.st)] * 100) + ' %</span>' +
+    (vencido ? '<span class="tag venc">seguimiento vencido</span>' : '') + '</div>' +
+    '<div class="row"><select data-c="estado" data-i="' + x.id + '" aria-label="Estado de ' + esc(x.n) + '">' +
+    map(ESTADOS, s => '<option' + (s === x.st ? " selected" : "") + '>' + s + '</option>') + '</select>' +
+    '<span class="s">Último contacto ' + bonita(x.lc) + '</span>' +
+    '<button data-a="seguir" data-i="' + x.id + '">Seguir</button>' +
+    '<button data-a="editar" data-i="' + x.id + '">Editar</button>' +
+    '<button data-a="borrar" data-i="' + x.id + '" aria-label="Borrar ' + esc(x.n) + '">Borrar</button></div></div>';
+}
+
+const plantillas = (o, k) => [
+  "Hola [Nombre], ¿cómo andás? Soy [tu nombre], de Rosario. Estuve mirando [negocio o sitio] y vi [algo concreto]. Hago " + o[0] + " por USD " + o[1] + ", en " + o[2] + ". ¿Te mando un ejemplo de cómo quedaría para [negocio]?",
+  "Hola [Nombre], te escribo por lo que te comenté de " + o[0] + ". ¿Pudiste mirarlo? Si te sirve, lo vemos en 10 minutos el [día y hora] y te cuento qué haría primero en [negocio].",
+  "Hola [Nombre], te dejo la propuesta de " + o[0] + ": USD " + o[1] + ", entrega en " + o[2] + ". Incluye: " + o[3] + ". Para arrancar, 50 % de adelanto (USD " + (o[1] / 2) + ") y el saldo contra entrega. Datos de pago: [alias o CBU]. ¿Arrancamos el [fecha]?"
+][k];
+
+function vVender() {
+  return '<h1>Vender</h1><p class="warn">Sin 50 % de adelanto no se arranca.</p>' +
+    map(SERVICIOS, (o, i) => '<div class="card"><b>' + esc(o[0]) + '</b> · ' + usd(o[1]) + ' · ' + esc(o[2]) +
+      '<p class="s">' + esc(o[3]) + '</p><div class="row">' +
+      map(["Primer contacto", "Seguimiento 48 h", "Propuesta enviada"], (t, k) =>
+        '<button data-a="copiarPlantilla" data-o="' + i + '" data-k="' + k + '">Copiar: ' + t + '</button>') +
+      '</div></div>');
+}
+
+function vCobrar() {
+  const c = cerrados();
+  const total = c.reduce((a, x) => a + x.m, 0);
+  const co = cobrado();
+  return '<h1>Cobrar</h1><div class="nums" style="grid-template-columns:repeat(2,1fr)">' +
+    num("Total por cobrar", usd(total - co)) + num("Total cobrado", usd(co)) + '</div>' +
+    (c.length ? map(c, x => '<div class="it"><div class="row"><b>' + esc(x.n) + '</b><span class="s">' + esc(SERVICIOS[x.sv][0]) + ' · ' + usd(x.m) + '</span></div>' +
+      (x.ent && x.p !== 3 ? '<p class="warn">Entrega terminada y saldo sin cobrar: ' + usd(x.m - cobradoDe(x)) + '.</p>' : '') +
+      '<div class="row"><select data-c="pago" data-i="' + x.id + '" aria-label="Estado de pago de ' + esc(x.n) + '">' +
+      map(PAGOS, (s, i) => '<option value="' + i + '"' + (x.p === i ? " selected" : "") + '>' + s + '</option>') + '</select>' +
+      '<label class="ck"><input type="checkbox" data-c="entregado" data-i="' + x.id + '"' + (x.ent ? " checked" : "") + '> Entregado</label></div></div>')
+      : '<p class="s">No hay trabajos cerrados. Pasá un contacto a «cerrado» en Pipeline.</p>');
+}
+
+function vSemana() {
+  const w = inicioSemana();
+  const cw = S.contactos.filter(c => c.slice(0, 10) >= w).length;
+  const cierres = S.pipeline.filter(x => x.st === "cerrado" && (x.cd || "") >= w);
+  const cobSem = S.pagos.filter(x => x.d >= w).reduce((a, x) => a + x.m, 0);
+  const horas = S.horas.filter(x => x.d >= w).reduce((a, x) => a + x.h, 0);
+  const parados = S.pipeline.filter(x => x.st !== "cerrado" && x.st !== "perdido" && diasDesde(x.lc) > 7);
+  const ideas = S.parqueadero.filter(x => !x.a).length;
+  const co = cobrado();
+
+  return '<h1>Semana</h1><div class="nums">' +
+    num("Contactos", cw) + num("Cierres", cierres.length + " · " + usd(cierres.reduce((a, x) => a + x.m, 0))) +
+    num("Cobrado", usd(cobSem)) + num("Horas de estudio", horas + " de " + S.objetivoHoras) + '</div>' +
+    '<div class="card"><small>Meta</small><div class="big">Faltan ' + usd(Math.max(0, S.meta - co)) + '</div>' +
+    '<p class="s">Cobrado ' + usd(co) + ' de ' + usd(S.meta) + '. Proyectado por pipeline: ' + usd(proyectado()) + '.</p></div>' +
+    '<h2>Contactos parados hace más de 7 días</h2>' +
+    (parados.length ? map(parados.slice(0, 8), x => '<div class="it"><div class="row"><span><b>' + esc(x.n) + '</b><br><span class="s">' + x.st + ' · último contacto ' + bonita(x.lc) + '</span></span>' +
+      '<button data-a="seguir" data-i="' + x.id + '">Seguir</button><button data-a="perdido" data-i="' + x.id + '">Dar por perdido</button></div></div>')
+      : '<p class="s">Ninguno. El pipeline está al día.</p>') +
+    (parados.length > 8 ? '<p class="s">Y ' + (parados.length - 8) + ' más en Pipeline.</p>' : '') +
+    '<p class="s">' + ideas + ' ideas sin revisar en <a class="lk" href="#parqueadero">Parqueadero</a>.</p>';
+}
+
+function vCampo() {
+  return '<h1>Motor de campo</h1><h2>Productos</h2>' +
+    map(PRODUCTOS_CAMPO, p => '<div class="it"><div class="row"><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div></div>') +
+    '<h2>Checklist de calidad</h2><div class="card">' +
+    map(CHECKLIST, (c, i) => '<label class="ck"><input type="checkbox" data-c="chk" data-i="' + i + '"' + (S.campo.chk[i] ? " checked" : "") + '> ' + c + '</label>') +
+    '</div><div class="nums" style="grid-template-columns:repeat(2,1fr)">' +
+    '<label class="n">Estudios entregados<input type="number" min="0" data-c="contador" data-k="est" value="' + S.campo.est + '"></label>' +
+    '<label class="n">Personas encuestadas<input type="number" min="0" data-c="contador" data-k="per" value="' + S.campo.per + '"></label>' +
+    '</div>';
+}
+
+function vFormacion() {
+  const w = inicioSemana();
+  const h = S.horas.filter(x => x.d >= w).reduce((a, x) => a + x.h, 0);
+  return '<h1>Formación</h1><div class="card"><small>Horas de estudio esta semana</small><div class="big">' + h + ' / ' + S.objetivoHoras + '</div>' +
+    '<label class="s">Objetivo semanal <input type="number" min="1" max="80" data-c="objetivoHoras" value="' + S.objetivoHoras + '" style="width:90px"></label></div>' +
+    '<form class="card" data-f="horas"><div class="row"><input type="date" name="d" value="' + hoyISO() + '" aria-label="Fecha">' +
+    '<input type="number" name="h" step="0.5" min="0.5" placeholder="Horas" aria-label="Horas" required><button>Sumar horas</button></div></form>' +
+    '<h2>Ruta en cuatro fases</h2>' +
+    map(S.fases, (f, i) => '<div class="it"><div class="row">' +
+      '<input data-c="fase" data-i="' + i + '" data-j="0" value="' + esc(f[0]) + '" placeholder="Fase ' + (i + 1) + ': nombre" aria-label="Nombre de la fase ' + (i + 1) + '" maxlength="80">' +
+      '<input data-c="fase" data-i="' + i + '" data-j="1" value="' + esc(f[1]) + '" placeholder="Artefacto entregable" aria-label="Artefacto de la fase ' + (i + 1) + '" maxlength="200">' +
+      '</div></div>') +
+    '<h2>Registro de prácticas</h2>' +
+    '<form class="card" data-f="practica"><div class="row"><input type="date" name="d" value="' + hoyISO() + '" aria-label="Fecha">' +
+    '<input name="a" placeholder="Qué hice" aria-label="Qué hice" required maxlength="300">' +
+    '<input name="b" placeholder="Qué aprendí" aria-label="Qué aprendí" maxlength="300">' +
+    '<input name="l" placeholder="Enlace a la evidencia" aria-label="Enlace a la evidencia" maxlength="300">' +
+    '</div><p><button class="pri">Registrar</button></p></form>' +
+    (S.practicas.length ? map(S.practicas.slice(0, 20), x => '<div class="it"><b>' + bonita(x.d) + '</b> ' + esc(x.a) + '<br><span class="s">' + esc(x.b) +
+      (/^https?:\/\//.test(x.l) ? ' · <a class="lk" href="' + esc(x.l) + '" target="_blank" rel="noopener noreferrer">evidencia</a>' : (x.l ? ' · ' + esc(x.l) : '')) + '</span></div>')
+      : '<p class="s">Sin prácticas registradas.</p>');
+}
+
+function vParqueadero() {
+  const activas = S.parqueadero.filter(x => !x.a);
+  const archivadas = S.parqueadero.filter(x => x.a);
+  return '<h1>Parqueadero</h1><p class="warn">Si entra algo nuevo a En curso, tiene que salir algo.</p>' +
+    '<form class="card" data-f="idea"><div class="row"><input name="t" placeholder="Idea o tarea que no toca hoy" aria-label="Idea o tarea" required maxlength="240">' +
+    '<button class="pri" style="flex:0 0 auto">Guardar</button></div></form>' +
+    (activas.length ? map(activas, x => '<div class="it"><div class="row"><span>' + esc(x.t) + '<br><span class="s">' + bonita(x.d) + '</span></span>' +
+      '<button data-a="archivar" data-i="' + x.id + '" style="flex:0 0 auto">Archivar</button></div></div>')
+      : '<p class="s">Nada estacionado.</p>') +
+    (archivadas.length ? '<p class="s">' + archivadas.length + ' archivadas.</p>' : '');
+}
+
+function vAjustes() {
+  const pwa = pwaEstado();
+  return '<h1>Ajustes</h1>' +
+    '<div class="card"><b>Meta</b><div class="row" style="margin-top:8px">' +
+    '<label class="s">Monto en USD <input type="number" min="1" data-c="meta" value="' + S.meta + '"></label>' +
+    '<label class="s">Fecha límite <input type="date" data-c="limite" value="' + S.limite + '"></label></div></div>' +
+
+    '<div class="card"><b>Datos</b><p class="s">Todo se guarda en este dispositivo. Exportá un respaldo seguido.</p>' +
+    '<div class="row"><button data-a="exportar">Exportar .json</button>' +
+    '<label class="s">Importar .json <input type="file" accept="application/json" data-c="importar"></label></div>' +
+    '<p class="s">Importar reemplaza todo lo que tenés ahora, salvo la configuración de sincronización.</p></div>' +
+
+    '<form class="card" data-f="sync"><b>Sincronización (Supabase, opcional)</b>' +
+    '<p class="s">' + esc(estadoSync) + '</p>' +
+    '<p class="warn">El identificador funciona como una contraseña: usá uno largo y aleatorio. Con la política de abajo, cualquiera que tenga la anon key y tu identificador puede leer y escribir estos datos. Para compartir con terceros hay que pasar a Supabase Auth.</p>' +
+    '<div class="row"><input name="url" value="' + esc(S.sync.url) + '" placeholder="URL del proyecto" aria-label="URL de Supabase">' +
+    '<input name="key" value="' + esc(S.sync.key) + '" placeholder="anon key" aria-label="Anon key">' +
+    '<input name="uid" value="' + esc(S.sync.uid) + '" placeholder="Identificador personal" aria-label="Identificador personal"></div>' +
+    '<p class="row"><button class="pri" style="flex:0 0 auto">Guardar y sincronizar</button>' +
+    '<button type="button" data-a="generarUid" style="flex:0 0 auto">Generar identificador seguro</button></p>' +
+    '<p class="s">SQL para crear la tabla, copialo en el editor SQL de Supabase:</p><pre>' + esc(SQL) + '</pre>' +
+    '<button type="button" data-a="copiarSql">Copiar SQL</button></form>' +
+
+    '<div class="card"><b>Instalar</b><p class="s">' + esc(pwa.mensaje) + '</p>' +
+    '<p><button data-a="instalar">Instalar en este dispositivo</button></p>' +
+    '<p class="s">Android (Chrome): menú de tres puntos, «Instalar app». iOS (Safari): botón Compartir, «Agregar a pantalla de inicio». Escritorio (Chrome o Edge): ícono de instalar en la barra de direcciones.</p>' +
+    '<p class="s">Para instalarse de verdad la app tiene que estar publicada por https, con <code>sw.js</code> y <code>manifest.webmanifest</code> al lado del <code>index.html</code>.</p></div>' +
+
+    '<p class="s">Operativo diario · v' + VERSION + ' · los datos viven en este navegador.</p>';
+}
+
+/* estado real de la PWA, sin ocultar el fallo */
+let pwaEstadoReal = { sw: "sin comprobar", protocolo: location.protocol };
+function pwaEstado() {
+  if (!/^https?:/.test(location.protocol)) return { ok: false, mensaje: "No disponible desde un archivo local (" + location.protocol + "). Abrila con https para instalarla: sw.js y manifest.webmanifest no funcionan en file://." };
+  if (pwaEstadoReal.sw === "error") return { ok: false, mensaje: "El service worker no se pudo registrar. La app funciona, pero no queda instalable ni offline." };
+  if (pwaEstadoReal.sw === "ok") return { ok: true, mensaje: "Service worker activo: la app abre sin conexión y se puede instalar." };
+  return { ok: false, mensaje: "Comprobando el service worker…" };
+}
+
+/* ---------- 8. ACCIONES ---------- */
+let borrado = null;
+
+const ACCIONES = {
+  hecho(d) {
+    const k = d.k, id = d.i;
+    if (k === "seguir") {
+      const x = S.pipeline.find(y => y.id === id);
+      if (x) { x.lc = hoyISO(); registrarContacto(); }
+    }
+    if (k === "entregar") {
+      const x = S.pipeline.find(y => y.id === id);
+      if (x) x.ent = 1;
+    }
+    if (k === "contactar") return;
+    marcarHecha(k, id);
+    guardar(); render(); toast("Listo");
+  },
+  reabrir() { S.accion = { fecha: "", tipo: "", ref: "", hecha: false }; guardar(); render(); },
+  seguir(d) {
+    const x = S.pipeline.find(y => y.id === d.i);
+    if (!x) return;
+    x.lc = hoyISO();
+    registrarContacto();
+    guardar(); render(); toast("Contacto registrado");
+  },
+  perdido(d) {
+    const x = S.pipeline.find(y => y.id === d.i);
+    if (!x) return;
+    x.st = "perdido"; x.lc = hoyISO();
+    guardar(); render(); toast("Marcado como perdido");
+  },
+  borrar(d) {
+    const i = S.pipeline.findIndex(y => y.id === d.i);
+    if (i < 0) return;
+    borrado = { item: S.pipeline[i], i };
+    S.pipeline.splice(i, 1);
+    guardar(); render();
+    toast("Contacto borrado", {
+      etiqueta: "Deshacer",
+      fn: () => { if (borrado) { S.pipeline.splice(borrado.i, 0, borrado.item); borrado = null; guardar(); render(); } }
+    });
+  },
+  editar(d) {
+    const x = S.pipeline.find(y => y.id === d.i);
+    if (!x) return;
+    const n = prompt("Nombre o negocio:", x.n);
+    if (n === null) return;
+    const m = prompt("Monto en USD:", String(x.m));
+    if (m === null) return;
+    if (n.trim()) x.n = n.trim().slice(0, 80);
+    x.m = numeroSeguro(m, x.m);
+    guardar(); render(); toast("Actualizado");
+  },
+  archivar(d) {
+    const x = S.parqueadero.find(y => y.id === d.i);
+    if (x) { x.a = 1; guardar(); render(); }
+  },
+  copiarPlantilla(d) { copiar(plantillas(SERVICIOS[+d.o], +d.k)); },
+  copiarSeguimiento(d) {
+    const x = S.pipeline.find(y => y.id === d.i);
+    if (x) copiar(plantillas(SERVICIOS[x.sv], 1));
+  },
+  copiarSql() { copiar(SQL, "SQL copiado"); },
+  cerrarModal() { $("#modal").classList.remove("on"); },
+  exportar() { exportar(); },
+  generarUid() {
+    const r = new Uint8Array(16);
+    (crypto.getRandomValues ? crypto : { getRandomValues: a => { for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256); return a; } }).getRandomValues(r);
+    const uid32 = Array.from(r, b => b.toString(16).padStart(2, "0")).join("");
+    const campo = document.querySelector('form[data-f="sync"] input[name="uid"]');
+    if (campo) { campo.value = uid32; campo.focus(); toast("Identificador generado: guardalo, es tu llave"); }
+  },
+  instalar() {
+    if (instalador) { instalador.prompt(); instalador = null; return; }
+    toast(pwaEstado().mensaje);
+  }
+};
+
+let instalador = null;
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-a]");
+  if (b && ACCIONES[b.dataset.a]) { e.preventDefault(); ACCIONES[b.dataset.a](b.dataset); }
+});
+
+/* formularios */
+document.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target;
+  const k = f.dataset.f;
+  if (!k) return;
+  const d = Object.fromEntries(new FormData(f));
+
+  if (k === "alta") {
+    const sv = enteroSeguro(d.sv, 0, SERVICIOS.length - 1, 0);
+    S.pipeline.unshift({
+      id: uid(), n: String(d.n || "").trim().slice(0, 80) || "Sin nombre", sv,
+      m: numeroSeguro(d.m, SERVICIOS[sv][1]),
+      st: ESTADOS.includes(d.st) ? d.st : "contactado",
+      lc: fechaSegura(d.lc, hoyISO()),
+      cd: d.st === "cerrado" ? hoyISO() : "",
+      p: 0, ent: 0
+    });
+    if (d.st !== "sin contactar" && d.st !== "perdido") registrarContacto();
+    guardar(); render(); toast("Contacto agregado");
+  }
+
+  if (k === "contacto") {
+    S.pipeline.unshift({
+      id: uid(), n: String(d.n || "").trim().slice(0, 80) || "Sin nombre", sv: 0,
+      m: SERVICIOS[0][1], st: "contactado", lc: hoyISO(), cd: "", p: 0, ent: 0
+    });
+    registrarContacto();
+    marcarHecha("contactar", "");
+    guardar(); render(); toast("Contacto registrado");
+  }
+
+  if (k === "horas") {
+    S.horas.push({ d: fechaSegura(d.d, hoyISO()), h: numeroSeguro(d.h, 0) });
+    guardar(); render(); toast("Horas sumadas");
+  }
+
+  if (k === "practica") {
+    S.practicas.unshift({ d: fechaSegura(d.d, hoyISO()), a: String(d.a || "").slice(0, 300), b: String(d.b || "").slice(0, 300), l: String(d.l || "").slice(0, 300) });
+    guardar(); render(); toast("Práctica registrada");
+  }
+
+  if (k === "idea") {
+    S.parqueadero.unshift({ id: uid(), t: String(d.t || "").slice(0, 240), d: hoyISO(), a: 0 });
+    guardar(); render(); toast("Estacionada");
+  }
+
+  if (k === "sync") {
+    S.sync.url = String(d.url || "").trim();
+    S.sync.key = String(d.key || "").trim();
+    S.sync.uid = String(d.uid || "").trim();
+    S.sync.ultima = 0;
+    guardar();
+    render();
+    if (syncListo()) sincronizar(true); else toast("Faltan datos de sincronización");
+  }
+});
+
+/* cambios en campos */
+document.addEventListener("change", e => {
+  const t = e.target;
+  const c = t.dataset.c;
+  if (!c) return;
+  const x = t.dataset.i ? S.pipeline.find(y => y.id === t.dataset.i) : null;
+
+  /* campos de solo valor: guardar sin re-renderizar (no se pierde el foco) */
+  if (c === "fase") { S.fases[+t.dataset.i][+t.dataset.j] = t.value.slice(0, 200); guardar(); return; }
+  if (c === "objetivoHoras") { S.objetivoHoras = enteroSeguro(t.value, 1, 80, 10); guardar(); return; }
+  if (c === "meta") { S.meta = numeroSeguro(t.value, S.meta) || 3000; guardar(); return; }
+  if (c === "limite") { S.limite = fechaSegura(t.value, S.limite); guardar(); return; }
+  if (c === "contador") { S.campo[t.dataset.k] = numeroSeguro(t.value, 0); guardar(); return; }
+  if (c === "svAlta") { const f = t.form; if (f && f.m) f.m.value = SERVICIOS[enteroSeguro(t.value, 0, 4, 0)][1]; return; }
+
+  /* campos que necesitan re-render: se restaura el foco después */
+  if (c === "filtroEst") { filtro.est = t.value; return render(); }
+  if (c === "filtroSv") { filtro.sv = t.value; return render(); }
+  if (c === "importar") {
+    const archivo = t.files && t.files[0];
+    if (archivo && confirm("Esto reemplaza todos tus datos actuales. ¿Seguir?")) archivo.text().then(importar);
+    return;
+  }
+  if (c === "chk") { S.campo.chk[+t.dataset.i] = t.checked ? 1 : 0; guardar(); return; }
+
+  if (c === "estado" && x) {
+    if (x.st === "sin contactar" && t.value !== "sin contactar" && t.value !== "perdido") registrarContacto();
+    x.st = ESTADOS.includes(t.value) ? t.value : x.st;
+    if (x.st === "cerrado" && !x.cd) x.cd = hoyISO();
+    if (x.st !== "sin contactar") x.lc = hoyISO();
+    guardar(); return render();
+  }
+  if (c === "pago" && x) {
+    const antes = cobradoDe(x);
+    x.p = enteroSeguro(t.value, 0, 3, 0);
+    const dif = cobradoDe(x) - antes;
+    if (dif > 0) S.pagos.push({ d: hoyISO(), m: dif });
+    guardar(); return render();
+  }
+  if (c === "entregado" && x) { x.ent = t.checked ? 1 : 0; guardar(); return render(); }
+});
+
+/* restaurar foco tras un render */
+let focoPrevio = null;
+document.addEventListener("focusin", e => {
+  const t = e.target;
+  if (!t || !t.dataset || !t.dataset.c) { focoPrevio = null; return; }
+  focoPrevio = '[data-c="' + t.dataset.c + '"]' + (t.dataset.i ? '[data-i="' + t.dataset.i + '"]' : "");
+});
+
+/* ---------- 9. ARRANQUE ---------- */
+function renderError(err) {
+  $("#app").innerHTML = '<div class="err"><h1>Algo se rompió</h1>' +
+    '<p>La app falló al dibujar esta pantalla. Tus datos siguen guardados: exportalos antes de tocar nada.</p>' +
+    '<code>' + esc((err && err.message) || String(err)) + '</code>' +
+    '<p><button class="pri" data-a="exportar">Exportar mis datos</button> <button data-a="reset">Restaurar estado vacío</button></p>' +
+    '<p class="s">Si querés reportarlo, mandá este mensaje junto con el archivo exportado.</p></div>';
+  ACCIONES.reset = () => {
+    if (confirm("Se borra todo el estado local. ¿Seguro?")) { S = estadoVacio(); guardar(); render(); }
+  };
+}
+
+function render() {
+  try {
+    const t = PESTANAS.some(p => p[0] === location.hash.slice(1)) ? location.hash.slice(1) : "hoy";
+    $("#nav").innerHTML = map(PESTANAS, p => '<a href="#' + p[0] + '"' + (p[0] === t ? ' aria-current="page"' : "") + '>' + p[1] + '</a>');
+
+    const vistas = { hoy: vHoy, pipeline: vPipeline, vender: vVender, cobrar: vCobrar, semana: vSemana, campo: vCampo, formacion: vFormacion, parqueadero: vParqueadero, ajustes: vAjustes };
+    let html = vistas[t]();
+
+    if (conflicto && t === "ajustes") {
+      html = '<div class="warn">Conflicto: la nube y este dispositivo tienen cambios distintos. ' +
+        '<button data-a="confLocal">Quedarme con este dispositivo</button> ' +
+        '<button data-a="confNube">Traer la nube</button></div>' + html;
+    }
+    $("#app").innerHTML = html;
+
+    if (focoPrevio) {
+      const el = document.querySelector(focoPrevio);
+      if (el && el !== document.activeElement) { try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); } }
+    }
+  } catch (e) {
+    renderError(e);
+  }
+}
+
+ACCIONES.confLocal = () => {
+  conflicto = null;
+  S.upd = ahoraISO();
+  guardar();
+  sincronizar(true);
+};
+ACCIONES.confNube = () => {
+  if (!conflicto) return;
+  adoptar(conflicto);
+};
+
+window.addEventListener("hashchange", render);
+
+/* PWA: manifest real + service worker real, con estado honesto */
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); instalador = e; });
+addEventListener("online", () => sincronizar());
+document.addEventListener("visibilitychange", () => { if (!document.hidden) sincronizar(); });
+
+if ("serviceWorker" in navigator && /^https?:/.test(location.protocol)) {
+  navigator.serviceWorker.register("./sw.js")
+    .then(() => { pwaEstadoReal.sw = "ok"; if (location.hash.slice(1) === "ajustes") render(); })
+    .catch(err => { pwaEstadoReal.sw = "error"; console.warn("SW no registrado:", err); if (location.hash.slice(1) === "ajustes") render(); });
+} else {
+  pwaEstadoReal.sw = "error";
+}
+
+cargar();
+render();
+if (!S.sync.ultima) estadoSync = "Sin sincronizar: todo queda en este dispositivo.";
+sincronizar();
+
+/* =========================================================================
+   QUÉ SE ARREGLÓ RESPECTO DE LA v1
+   1. PWA: manifest real + sw.js real; si no hay https se dice, no se esconde.
+      Prueba: abrir por file:// y ver el aviso en Ajustes; publicar por https y
+      ver "Service worker activo".
+   2. Copiar: clipboard → execCommand → modal manual.
+      Prueba: abrir desde file:// y tocar "Copiar: Primer contacto".
+   3. Saneado + pantalla de error: importar un JSON con sv:99 y st:"xyz".
+      Prueba: la app abre igual y descarta el registro roto.
+   4. Sync: identificador aleatorio de 32, SQL copiable, conflicto solo si hay
+      cambios en los dos lados. Prueba: dos pestañas, editar en ambas.
+   5. Foco: escribir en las 4 fases no mueve el cursor ni pierde el click.
+      Prueba: llenar los dos campos de una fase seguidos.
+   6. Acción con estado: se marca hecha y no reaparece; se puede reabrir.
+   7. Un solo registrarContacto con dedupe: marcar "Hecho" no suma doble.
+   8. Sin log que crezca; fechas locales; h1 por vista; toast con aria-live.
+   PENDIENTE v3: editar monto con formulario inline (hoy usa prompt), historial
+   de cambios por contacto, exportar informe PDF, y Supabase Auth para compartir.
+   ========================================================================= */
+</script>
+</body>
+</html>
+
