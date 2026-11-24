@@ -1,0 +1,134 @@
+<!doctype html><html lang="es-AR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050608"><title>Operativo diario</title>
+<style>
+:root{--bg:#050608;--c:#0f1520;--b:#ffffff14;--a:#2f6df6;--t:#f7f8fa;--s:#9ba8b8;--w:#f5a524}
+*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.5 Inter,system-ui,sans-serif}
+main{max-width:920px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+nav{display:flex;gap:4px;overflow-x:auto;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--bg);z-index:5}
+nav a{color:var(--s);text-decoration:none;padding:8px 12px;border-radius:8px;white-space:nowrap;font-size:14px}nav a[aria-current]{color:var(--t);background:var(--c);box-shadow:inset 0 0 0 1px var(--b)}
+:focus-visible{outline:2px solid #8fb0ff;outline-offset:2px}
+.card{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:20px;margin:0 0 16px}
+h1{font-size:clamp(22px,4vw,30px);line-height:1.25;margin:8px 0 16px}h2{font-size:18px;margin:28px 0 12px}
+small,.s{color:var(--s);font-size:13px}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.n{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:14px;color:var(--s);font-size:13px}.n b{display:block;color:var(--t);font-size:clamp(20px,4.5vw,32px);line-height:1.15}
+.bar{height:10px;background:var(--c);border:1px solid var(--b);border-radius:9px;overflow:hidden;margin-bottom:6px}.bar i{display:block;height:100%;background:var(--a)}
+button,input,select{font:inherit;color:var(--t);background:var(--bg);border:1px solid var(--b);border-radius:8px;padding:10px 12px;max-width:100%}
+button{cursor:pointer;background:var(--c)}button.pri{background:var(--a);border-color:var(--a);color:#fff;font-weight:600;padding:12px 24px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.row>*{flex:1 1 140px}.it{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.warn{border-left:3px solid var(--w);padding:8px 12px;color:var(--w);margin:12px 0}
+.big{font-size:clamp(26px,6vw,40px);font-weight:700;line-height:1.2}
+.ck{display:flex;gap:10px;align-items:center;padding:6px 0}.ck input{flex:0 0 auto;width:20px;height:20px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--a);color:#fff;padding:10px 18px;border-radius:10px;display:none}
+@media(max-width:560px){.nums{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><nav id="nav" aria-label="Secciones"></nav><main id="app"></main><div id="toast" role="status"></div>
+<script>
+const $=s=>document.querySelector(s),K='opsv1',VER=1;
+const OF=[['Diagnóstico web express',180,'48 h','Revisión de velocidad, SEO, seguridad y conversión, con informe priorizado'],['Landing que vende',480,'5 días','Una página de venta con textos, diseño y medición'],['Blindaje básico para PyME',550,'1 semana','Revisión de accesos, copias, correo y contraseñas, con plan de corrección'],['Pack de contenido mensual',320,'Mensual','Calendario y piezas del mes para redes'],['Automatización con IA',750,'10 días','Un proceso repetitivo automatizado y documentado']];
+const ST=['sin contactar','contactado','interesado','propuesta','cerrado','perdido'],PR=[.05,.1,.25,.5,1,0];
+const PS=['Pendiente de adelanto','Adelanto cobrado','Saldo pendiente','Cobrado'];
+const TABS=[['hoy','Hoy'],['pipeline','Pipeline'],['vender','Vender'],['cobrar','Cobrar'],['campo','Motor de campo'],['formacion','Formación'],['parqueadero','Parqueadero'],['ajustes','Ajustes']];
+const CHK=['Consentimiento registrado','Cuotas definidas','Verificación telefónica del 10 %','Informe metodológico','Copia de seguridad de la base'];
+const PRD=[['Relevamiento interno','USD 1.800'],['Estudio a medida','USD 2.800'],['Línea de base','USD 4.500'],['Observatorio mensual','USD 1.200 por mes'],['Clasificación por registro','USD 0,04 por registro']];
+const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const M=(a,f)=>a.map(f).join(''),U=n=>'USD '+Math.round(n).toLocaleString('es-AR'),F=d=>d?d.split('-').reverse().join('/'):'';
+const now=()=>new Date().toISOString(),uid=()=>Math.random().toString(36).slice(2,9);
+const td=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const ad=(n,b=td())=>{const d=new Date(b+'T12:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+const ago=x=>(Date.now()-new Date(x.length>10?x:x+'T00:00'))/864e5;
+const wk=()=>{const d=new Date(td()+'T12:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().slice(0,10)};
+const def=()=>({v:VER,upd:'',goal:3000,end:ad(15),pipe:[],cont:[],dn:[],camp:{chk:[0,0,0,0,0],est:0,per:0},hrs:[],hg:10,fases:[['',''],['',''],['',''],['','']],pr:[],pk:[],sy:{}});
+function mig(o){o=Object.assign(def(),o&&typeof o=='object'?o:{});/* futuras migraciones: if(o.v<2){...} */o.v=VER;return o}
+let S;try{S=mig(JSON.parse(localStorage.getItem(K)))}catch{S=def()}
+let fl={st:'',sv:''},cf=null,st='Sin sync configurado: la app funciona igual, todo queda en este dispositivo.',tm,rt,ip;
+const put=()=>localStorage.setItem(K,JSON.stringify(S));
+function save(){S.upd=now();put();clearTimeout(tm);tm=setTimeout(()=>sync(),2500)}
+function tt(m){const t=$('#toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
+const cobx=x=>x.p==3?x.m:(x.p==1||x.p==2)?x.m/2:0,CER=()=>S.pipe.filter(x=>x.st=='cerrado');
+const proy=()=>S.pipe.reduce((a,x)=>a+x.m*PR[ST.indexOf(x.st)],0),cobr=()=>CER().reduce((a,x)=>a+cobx(x),0);
+function pick(){let o=S.pipe.find(x=>x.st=='propuesta'&&ago(x.lc)>2);
+if(o)return[`Seguí a ${o.n}: propuesta de ${OF[o.sv][0]} sin respuesta desde el ${F(o.lc)}. Mandá el seguimiento y proponé fecha para cerrar.`,'Propuesta enviada sin seguimiento hace más de 48 h.',o.id];
+o=CER().find(x=>(x.p==0&&ago(x.cd||td())>3)||x.p==2||(x.ent&&x.p!=3));
+if(o)return[`Cobrale a ${o.n} lo que falta de ${OF[o.sv][0]} (${U(o.m-cobx(o))}). Mandá alias y monto por WhatsApp.`,'Hay un cobro vencido.'];
+const h=S.cont.filter(c=>c.slice(0,10)==td()).length;
+if(proy()<S.goal&&h<5)return[`Mandá ${5-h} mensajes de primer contacto por WhatsApp (plantillas en Vender) y cargalos en Pipeline.`,'El pipeline proyectado no llega a la meta.'];
+o=CER().find(x=>!x.ent&&x.p>=1);
+if(o)return[`Entregá ${OF[o.sv][0]} a ${o.n}. Cuando entregues, marcalo en Cobrar y pedí el saldo.`,'Hay un trabajo cerrado sin entregar.'];
+return['Sin pendientes urgentes: cargá un contacto nuevo en Pipeline.','No se cumple ninguna regla de prioridad.']}
+const n=(l,v)=>`<div class="n">${l}<b>${v}</b></div>`;
+function vHoy(){const[a,why,id]=pick(),ch=S.cont.filter(c=>c.slice(0,10)==td()).length,co=cobr(),l=S.cont.at(-1),dr=Math.ceil((new Date(S.end+'T23:59')-Date.now())/864e5);
+return`<section class="card"><small>La acción de hoy</small><h1>${E(a)}</h1><button class="pri" data-a="done" data-i="${id||''}">Hecho</button><p><small>${E(why)}</small></p></section>
+<div class="nums">${n('Días restantes',Math.max(dr,0))}${n('Cobrado',U(co))}${n('Proyectado por pipeline',U(proy()))}${n('Contactos hechos hoy',ch)}</div>
+<div class="bar" role="progressbar" aria-label="Progreso hacia la meta" aria-valuemin="0" aria-valuemax="${S.goal}" aria-valuenow="${Math.round(co)}"><i style="width:${Math.min(100,co/S.goal*100)}%"></i></div><small>${U(co)} de ${U(S.goal)}</small>
+${(!l||Date.now()-new Date(l)>1728e5)?`<p class="warn">${l?`Sin contactos desde el ${F(l.slice(0,10))}. El pipeline se seca en silencio.`:'Sin contactos registrados. El pipeline se seca en silencio.'}</p>`:''}`}
+function vPipe(){const L=S.pipe.filter(x=>(!fl.st||x.st==fl.st)&&(fl.sv===''||x.sv==fl.sv));
+return`<form class="card" data-f="add"><div class="row"><input name="n" placeholder="Nombre" aria-label="Nombre" required><select name="sv" data-c="svp" aria-label="Servicio">${M(OF,(o,i)=>`<option value="${i}">${o[0]} · USD ${o[1]}</option>`)}</select><input name="m" type="number" min="0" value="${OF[0][1]}" aria-label="Monto en USD"><select name="st" aria-label="Estado">${M(ST,s=>`<option>${s}</option>`)}</select><input name="lc" type="date" value="${td()}" aria-label="Fecha de último contacto"></div><p><button class="pri">Agregar</button></p></form>
+<div class="row"><select data-c="fst" aria-label="Filtrar por estado"><option value="">Todos los estados</option>${M(ST,s=>`<option${fl.st==s?' selected':''}>${s}</option>`)}</select><select data-c="fsv" aria-label="Filtrar por servicio"><option value="">Todos los servicios</option>${M(OF,(o,i)=>`<option value="${i}"${fl.sv===String(i)?' selected':''}>${o[0]}</option>`)}</select></div>
+<p class="s">Proyectado: <b>${U(proy())}</b> · ${L.length} de ${S.pipe.length} contactos</p>
+${L.length?M(L,x=>`<div class="it"><div class="row"><b>${E(x.n)}</b><span class="s">${OF[x.sv][0]} · ${U(x.m)} · ${Math.round(PR[ST.indexOf(x.st)]*100)} %</span></div><div class="row"><select data-c="st" data-i="${x.id}" aria-label="Estado de ${E(x.n)}">${M(ST,s=>`<option${s==x.st?' selected':''}>${s}</option>`)}</select><span class="s">Último contacto ${F(x.lc)}${x.st!='cerrado'&&x.st!='perdido'?` · seguimiento ${ago(x.lc)>2?'vencido':'el '+F(ad(2,x.lc))}`:''}</span><button data-a="seg" data-i="${x.id}">Seguir</button><button data-a="del" data-i="${x.id}" aria-label="Borrar ${E(x.n)}">Borrar</button></div></div>`):'<p class="s">Todavía no cargaste contactos. Cargá el primero arriba.</p>'}`}
+const TP=(o,k)=>[`Hola [Nombre], ¿cómo andás? Soy [tu nombre], de Rosario. Estuve mirando [negocio o sitio] y vi [algo concreto]. Hago ${o[0]} por USD ${o[1]}, en ${o[2]}. ¿Te mando un ejemplo de cómo quedaría para [negocio]?`,`Hola [Nombre], te escribo por lo que te comenté de ${o[0]}. ¿Pudiste mirarlo? Si te sirve, lo vemos en 10 minutos el [día y hora] y te cuento qué haría primero en [negocio].`,`Hola [Nombre], te dejo la propuesta de ${o[0]}: USD ${o[1]}, entrega en ${o[2]}. Incluye: ${o[3].toLowerCase()}. Para arrancar, 50 % de adelanto (USD ${o[1]/2}) y el saldo contra entrega. Datos de pago: [alias o CBU]. ¿Arrancamos el [fecha]?`][k];
+const vSell=()=>`<p class="warn">Sin 50 % de adelanto no se arranca.</p>`+M(OF,(o,i)=>`<div class="card"><b>${o[0]}</b> · ${U(o[1])} · ${o[2]}<p class="s">${o[3]}</p><div class="row">${M(['Primer contacto','Seguimiento 48 h','Propuesta enviada'],(t,k)=>`<button data-a="copy" data-o="${i}" data-k="${k}">Copiar: ${t}</button>`)}</div></div>`);
+function vCob(){const C=CER(),tot=C.reduce((a,x)=>a+x.m,0),co=cobr();
+return`<div class="nums" style="grid-template-columns:repeat(2,1fr)">${n('Total por cobrar',U(tot-co))}${n('Total cobrado',U(co))}</div>
+${C.length?M(C,x=>`<div class="it"><div class="row"><b>${E(x.n)}</b><span class="s">${OF[x.sv][0]} · ${U(x.m)}</span></div>${x.ent&&x.p!=3?`<p class="warn">Entrega terminada y saldo sin cobrar: ${U(x.m-cobx(x))}.</p>`:''}<div class="row"><select data-c="p" data-i="${x.id}" aria-label="Estado de pago de ${E(x.n)}">${M(PS,(s,i)=>`<option value="${i}"${x.p==i?' selected':''}>${s}</option>`)}</select><label class="ck"><input type="checkbox" data-c="ent" data-i="${x.id}"${x.ent?' checked':''}>Entregado</label></div></div>`):'<p class="s">No hay trabajos cerrados. Pasá un contacto a "cerrado" en Pipeline.</p>'}`}
+const vCamp=()=>`<h2>Productos</h2>${M(PRD,p=>`<div class="it"><div class="row"><b>${p[0]}</b><span>${p[1]}</span></div></div>`)}<h2>Checklist de calidad</h2><div class="card">${M(CHK,(c,i)=>`<label class="ck"><input type="checkbox" data-c="chk" data-i="${i}"${S.camp.chk[i]?' checked':''}>${c}</label>`)}</div><div class="nums" style="grid-template-columns:repeat(2,1fr)"><label class="n">Estudios entregados<input type="number" min="0" data-c="cn" data-k="est" value="${S.camp.est}"></label><label class="n">Personas encuestadas<input type="number" min="0" data-c="cn" data-k="per" value="${S.camp.per}"></label></div>`;
+function vForm(){const h=S.hrs.filter(x=>x.d>=wk()).reduce((a,x)=>a+x.h,0);
+return`<div class="card"><small>Horas de estudio esta semana</small><div class="big">${h} / ${S.hg}</div><label class="s">Objetivo semanal <input type="number" min="1" data-c="hg" value="${S.hg}"></label></div>
+<form class="card" data-f="hr"><div class="row"><input type="date" name="d" value="${td()}" aria-label="Fecha"><input type="number" name="h" step=".5" min=".5" placeholder="Horas" aria-label="Horas" required><button>Sumar horas</button></div></form>
+<h2>Ruta en cuatro fases</h2>${M(S.fases,(f,i)=>`<div class="it"><div class="row"><input data-c="fz" data-i="${i}" data-j="0" value="${E(f[0])}" placeholder="Fase ${i+1}: nombre" aria-label="Nombre de la fase ${i+1}"><input data-c="fz" data-i="${i}" data-j="1" value="${E(f[1])}" placeholder="Artefacto entregable" aria-label="Entregable de la fase ${i+1}"></div></div>`)}
+<h2>Registro de prácticas</h2><form class="card" data-f="pr"><div class="row"><input type="date" name="d" value="${td()}" aria-label="Fecha"><input name="a" placeholder="Qué hice" aria-label="Qué hice" required><input name="b" placeholder="Qué aprendí" aria-label="Qué aprendí"><input name="l" placeholder="Enlace a la evidencia" aria-label="Enlace a la evidencia"></div><p><button class="pri">Registrar</button></p></form>
+${S.pr.length?M(S.pr,x=>`<div class="it"><b>${F(x.d)}</b> ${E(x.a)}<br><span class="s">${E(x.b)}${/^https?:\/\//.test(x.l)?` · <a style="color:#8fb0ff" href="${E(x.l)}" target="_blank" rel="noopener">evidencia</a>`:x.l?' · '+E(x.l):''}</span></div>`):'<p class="s">Sin prácticas registradas.</p>'}`}
+const vPark=()=>`<p class="warn">Si entra algo nuevo a En curso, tiene que salir algo.</p><form class="card" data-f="pk"><div class="row"><input name="t" placeholder="Idea o tarea que no toca hoy" aria-label="Idea o tarea" required><button class="pri" style="flex:0 0 auto">Guardar</button></div></form>${S.pk.some(x=>!x.a)?M(S.pk.filter(x=>!x.a),x=>`<div class="it"><div class="row"><span>${E(x.t)}<br><span class="s">${F(x.d)}</span></span><button data-a="arch" data-i="${x.id}" style="flex:0 0 auto">Archivar</button></div></div>`):'<p class="s">Nada estacionado.</p>'}${S.pk.some(x=>x.a)?`<p class="s">${S.pk.filter(x=>x.a).length} archivadas.</p>`:''}`;
+const vSet=()=>`<div class="card"><b>Meta</b><div class="row"><label class="s">Monto en USD <input type="number" min="1" data-c="goal" value="${S.goal}"></label><label class="s">Fecha límite <input type="date" data-c="end" value="${S.end}"></label></div></div>
+<div class="card"><b>Datos</b><p class="s">Todo se guarda en este dispositivo. Exportá un respaldo seguido.</p><div class="row"><button data-a="exp">Exportar .json</button><label class="s">Importar .json <input type="file" accept="application/json" data-c="imp"></label></div></div>
+<form class="card" data-f="sy"><b>Sincronización con Supabase (opcional)</b><p class="s">${E(st)}</p><div class="row"><input name="url" value="${E(S.sy.url)}" placeholder="URL del proyecto" aria-label="URL de Supabase"><input name="key" value="${E(S.sy.key)}" placeholder="anon key" aria-label="Anon key"><input name="uid" value="${E(S.sy.uid)}" placeholder="Tu identificador personal" aria-label="Identificador personal"></div><p class="row"><button class="pri" style="flex:0 0 auto">Guardar y sincronizar</button></p></form>
+<div class="card"><b>Instalar</b><p><button data-a="inst">Instalar en este dispositivo</button></p><p class="s">Android (Chrome): menú de tres puntos, "Instalar app" o "Agregar a pantalla de inicio". iOS (Safari): botón Compartir, "Agregar a pantalla de inicio". Escritorio (Chrome o Edge): ícono de instalar en la barra de direcciones. La app debe estar publicada por https para instalarse.</p></div>`;
+const bn=()=>cf?`<div class="warn">Conflicto: la nube tiene cambios más nuevos y este dispositivo también. <button data-a="cfL">Quedarme con este dispositivo</button> <button data-a="cfR">Traer la nube</button></div>`:'';
+function render(){const t=TABS.some(x=>x[0]==location.hash.slice(1))?location.hash.slice(1):'hoy';
+$('#nav').innerHTML=M(TABS,x=>`<a href="#${x[0]}"${x[0]==t?' aria-current="page"':''}>${x[1]}</a>`);
+$('#app').innerHTML=bn()+({hoy:vHoy,pipeline:vPipe,vender:vSell,cobrar:vCob,campo:vCamp,formacion:vForm,parqueadero:vPark,ajustes:vSet})[t]()}
+const A={done(d){const x=d.i&&S.pipe.find(y=>y.id==d.i);if(x){x.lc=td();S.cont.push(now())}S.dn.push({d:now()});save();render()},
+seg(d){const x=S.pipe.find(y=>y.id==d.i);x.lc=td();S.cont.push(now());save();render()},
+del(d){if(confirm('¿Borrar este contacto?')){S.pipe=S.pipe.filter(y=>y.id!=d.i);save();render()}},
+copy(d){const t=TP(OF[d.o],+d.k);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>tt('Copiado'),()=>tt('No se pudo copiar'))},
+arch(d){S.pk.find(y=>y.id==d.i).a=1;save();render()},
+exp(){const{sy,...r}=S,a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(r,null,1)],{type:'application/json'}));a.download='operativo-'+td()+'.json';a.click()},
+inst(){ip?ip.prompt():tt('Usá el menú del navegador: Agregar a pantalla de inicio')},
+cfL(){cf=null;sync(1)},cfR(){adopt(cf);cf=null;render()}};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)A[b.dataset.a](b.dataset)});
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,d=Object.fromEntries(new FormData(f)),k=f.dataset.f;
+if(k=='add'){S.pipe.push({id:uid(),n:d.n.trim(),sv:+d.sv,m:+d.m||0,st:d.st,lc:d.lc||td(),cd:d.st=='cerrado'?td():'',p:0,ent:0});if(d.st!='sin contactar'&&d.st!='perdido')S.cont.push(now())}
+else if(k=='pk')S.pk.unshift({id:uid(),t:d.t.trim(),d:td(),a:0});
+else if(k=='hr')S.hrs.push({d:d.d||td(),h:+d.h||0});
+else if(k=='pr')S.pr.unshift({d:d.d||td(),a:d.a,b:d.b,l:d.l});
+else if(k=='sy')S.sy={...S.sy,url:d.url.trim(),key:d.key.trim(),uid:d.uid.trim()};
+save();render();if(k=='sy')sync()});
+document.addEventListener('change',e=>{const t=e.target,c=t.dataset.c;if(!c)return;const x=S.pipe.find(y=>y.id==t.dataset.i);
+if(c=='svp'){t.form.m.value=OF[t.value][1];return}
+if(c=='fst'){fl.st=t.value;return render()}if(c=='fsv'){fl.sv=t.value;return render()}
+if(c=='imp'){const f=t.files[0];if(f)f.text().then(s=>{try{const sy=S.sy;S=mig(JSON.parse(s));S.sy=sy;save();render();tt('Importado')}catch{tt('Archivo inválido')}});return}
+if(c=='st'){if(x.st=='sin contactar'&&t.value!='sin contactar'&&t.value!='perdido'){S.cont.push(now());x.lc=td()}x.st=t.value;if(t.value=='cerrado'&&!x.cd)x.cd=td()}
+else if(c=='p')x.p=+t.value;else if(c=='ent')x.ent=t.checked?1:0;
+else if(c=='chk')S.camp.chk[t.dataset.i]=t.checked?1:0;
+else if(c=='cn')S.camp[t.dataset.k]=Math.max(0,+t.value||0);
+else if(c=='fz')S.fases[t.dataset.i][t.dataset.j]=t.value;
+else if(c=='hg')S.hg=+t.value||10;else if(c=='goal')S.goal=+t.value||3000;else if(c=='end')S.end=t.value||S.end;
+save();render()});
+/* Sync Supabase: last-write-wins sobre el estado completo; las claves nunca salen del dispositivo */
+const SY=()=>S.sy.url&&S.sy.key&&S.sy.uid,H=()=>({apikey:S.sy.key,Authorization:'Bearer '+S.sy.key,'Content-Type':'application/json','x-uid':S.sy.uid});
+function adopt(rm){const sy=S.sy;S=mig(rm.json);S.sy=sy;S.upd=new Date(rm.actualizado_en).toISOString();S.sy.last=Date.now();put();st='Sincronizado a las '+new Date().toLocaleTimeString('es-AR');render()}
+async function sync(force){if(!SY())return;clearTimeout(rt);try{const u=S.sy.url.replace(/\/$/,'')+'/rest/v1/estado_app';let rm;
+if(!force){const r=await fetch(u+'?user_id=eq.'+encodeURIComponent(S.sy.uid)+'&select=json,actualizado_en',{headers:H()});if(!r.ok)throw r.status;rm=(await r.json())[0]}
+if(rm){const r1=Date.parse(rm.actualizado_en),l=Date.parse(S.upd||0)||0;
+if(r1>l+1000){if(l>(S.sy.last||0)){cf=rm;st='Conflicto sin resolver.';return render()}return adopt(rm)}
+if(r1==l||Math.abs(r1-l)<=1000){st='Sincronizado a las '+new Date().toLocaleTimeString('es-AR');return render()}}
+if(!S.upd)S.upd=now();const{sy,...rest}=S;
+const r=await fetch(u+'?on_conflict=user_id',{method:'POST',headers:{...H(),Prefer:'resolution=merge-duplicates'},body:JSON.stringify({user_id:S.sy.uid,json:rest,actualizado_en:S.upd})});if(!r.ok)throw r.status;
+S.sy.last=Date.now();put();st='Sincronizado a las '+new Date().toLocaleTimeString('es-AR');render()}
+catch(e){st='No se pudo sincronizar (error '+e+'). Reintento en 30 s. Mientras tanto la app sigue funcionando en local.';render();rt=setTimeout(()=>sync(),3e4)}}
+/* PWA: manifest embebido; el service worker va en sw.js al lado de este archivo */
+const ic='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#050608"/><path d="M130 320l100-100 60 60 100-120" stroke="#2f6df6" stroke-width="44" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+const mf=document.createElement('link');mf.rel='manifest';mf.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify({name:'Operativo diario',short_name:'Operativo',start_url:location.href.split('#')[0],display:'standalone',background_color:'#050608',theme_color:'#050608',icons:[{src:ic,sizes:'192x192 512x512',type:'image/svg+xml',purpose:'any'}]}));document.head.append(mf);
+const ai=document.createElement('link');ai.rel='icon';ai.href=ic;document.head.append(ai);
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e});addEventListener('hashchange',render);addEventListener('online',()=>sync());
+if('serviceWorker'in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();sync();
+</script></body></html>
